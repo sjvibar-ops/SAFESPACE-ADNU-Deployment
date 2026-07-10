@@ -277,6 +277,9 @@ class Appointment(db.Model, TimestampMixin):
     therapist_notes = db.Column(db.Text, nullable=True)  # Private clinical notes
 
     responded_at = db.Column(db.DateTime, nullable=True)
+    session_end = db.Column(db.DateTime, nullable=True)
+
+    duration_minutes = db.Column(db.Integer, default=50, nullable=False)
 
     # Relationships
     user = db.relationship("User", foreign_keys=[user_id], backref="appointments")
@@ -305,21 +308,36 @@ class ChatThread(db.Model, TimestampMixin):
 
     id = db.Column(db.Integer, primary_key=True)
 
-    # Peer chat or therapist session
     thread_type = db.Column(db.String(20), nullable=False, default="therapist")
-    # "therapist", "peer", "ai"
-
-    # For therapist sessions: exactly 2 participants
     user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=True, index=True)
     therapist_id = db.Column(db.Integer, db.ForeignKey("therapist.user_id"), nullable=True, index=True)
+    
+    # NEW: Link to appointment
+    appointment_id = db.Column(
+        db.Integer, 
+        db.ForeignKey("appointment.id"), 
+        nullable=True, 
+        index=True
+    )
+    appointment = db.relationship(
+        "Appointment",
+        backref="chat_thread",
+        uselist=False,
+    )
+    therapist = db.relationship(
+        "Therapist",
+        foreign_keys="ChatThread.therapist_id",
+        backref="chat_threads",
+    )
 
-    # For peer chats: matched anonymously
+    
+    # NEW: Session duration in minutes
+    session_duration = db.Column(db.Integer, default=50, nullable=False)
+
     peer_listener_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=True)
-
     is_active = db.Column(db.Boolean, default=True, nullable=False)
     closed_at = db.Column(db.DateTime, nullable=True)
 
-    # Relationships
     messages = db.relationship(
         "ChatMessage",
         backref="thread",
@@ -334,23 +352,85 @@ class ChatThread(db.Model, TimestampMixin):
             raise ValueError(f"Invalid thread type: {tt}")
         return tt
 
+    def get_other_participant(self, user_id):
+        if self.thread_type == "therapist":
+            if user_id == self.user_id:
+                return self.therapist.user if self.therapist else None
+            return User.query.get(self.user_id)
+        else:
+            if user_id == self.user_id:
+                return User.query.get(self.peer_listener_id) if self.peer_listener_id else None
+            return User.query.get(self.user_id)
+
+    def display_title(self, for_user_id):
+        other = self.get_other_participant(for_user_id)
+        if not other:
+            return "Unknown"
+        
+        if self.thread_type == "therapist":
+            viewer = User.query.get(for_user_id)
+            if viewer and viewer.role == "therapist":
+                return other.display_name or f"Client #{other.id}"
+            else:
+                name = other.display_name or "Therapist"
+                # Avoid double "Dr."
+                if name.lower().startswith("dr."):
+                    return name
+                if name.lower().startswith("dr "):
+                    return f"Dr. {name[3:]}"
+                return f"Dr. {name}"
+        
+        return f"Anonymous#{other.id}" if other else "Peer"
+
+    def last_message(self):
+        return (
+            ChatMessage.query.filter_by(thread_id=self.id)
+            .order_by(ChatMessage.created_at.desc())
+            .first()
+        )
+
+    def is_session_active(self):
+        if not self.appointment:
+            return True
+        now = datetime.now()  # LOCAL time, not UTC
+        start = self.appointment.scheduled_for
+        
+        if start.tzinfo is not None:
+            start = start.replace(tzinfo=None)
+        
+        from datetime import timedelta
+        end = start + timedelta(minutes=self.session_duration)
+        return start <= now <= end
+
+    def session_status(self):
+        if not self.appointment:
+            return "active"
+        now = datetime.now()  # LOCAL time
+        start = self.appointment.scheduled_for
+        
+        if start.tzinfo is not None:
+            start = start.replace(tzinfo=None)
+        
+        from datetime import timedelta
+        end = start + timedelta(minutes=self.session_duration)
+        
+        if now < start:
+            return "upcoming"
+        elif start <= now <= end:
+            return "active"
+        else:
+            return "ended"
+
 
 class ChatMessage(db.Model, TimestampMixin):
     __tablename__ = "chat_message"
 
     id = db.Column(db.Integer, primary_key=True)
-
     thread_id = db.Column(db.Integer, db.ForeignKey("chat_thread.id"), nullable=False, index=True)
     sender_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False, index=True)
-
-    # Message body — never stored as HTML, always escaped on render (#19)
     body = db.Column(db.Text, nullable=False)
-
-    # Metadata for moderation/audit
     is_flagged = db.Column(db.Boolean, default=False, nullable=False)
     flagged_reason = db.Column(db.String(200), nullable=True)
-
-    # Edited messages keep history
     edited_at = db.Column(db.DateTime, nullable=True)
     original_body = db.Column(db.Text, nullable=True)
 
@@ -361,7 +441,6 @@ class ChatMessage(db.Model, TimestampMixin):
         if len(body) > 4000:
             raise ValueError("Message too long (max 4000 chars)")
         return body.strip()
-
 
 # ---------------------------------------------------------------------------
 # Availability (therapist schedule)
@@ -492,6 +571,15 @@ def hash_email_before_commit(mapper, connection, target):
         target.email_hash = hashlib.sha256(
             target.email.lower().strip().encode()
         ).hexdigest()
+
+@event.listens_for(ChatMessage, "after_insert")
+def _bump_thread_timestamp(mapper, connection, target):
+    from datetime import datetime, timezone
+    connection.execute(
+        ChatThread.__table__.update()
+        .where(ChatThread.id == target.thread_id)
+        .values(updated_at=datetime.now(timezone.utc))
+    )
 
 
 # ---------------------------------------------------------------------------

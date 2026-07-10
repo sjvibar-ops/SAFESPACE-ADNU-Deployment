@@ -1,0 +1,221 @@
+{% extends "user/base.html" if current_user.role == 'user' else "therapist/base.html" %}
+
+{% block title %}SafeSpace — Chat{% endblock %}
+
+{% block content %}
+<div class="chat-container full-height">
+    <div class="chat-header">
+        <div class="chat-avatar">
+            <span class="avatar-initials">
+                {{ thread.display_title(current_user.id)[:2]|upper }}
+            </span>
+        </div>
+        <div class="chat-meta">
+            <h3>{{ thread.display_title(current_user.id) }}</h3>
+            {% if thread.appointment %}
+            <span class="session-time">
+                {{ thread.appointment.scheduled_for.strftime('%b %d, %Y at %I:%M %p') }}
+                ({{ thread.session_duration }} min)
+            </span>
+            {% endif %}
+        </div>
+        <span class="encryption-notice">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+            </svg>
+            Messages are private and secure
+        </span>
+    </div>
+
+    {# Session Status Banner #}
+    {% if session_status == 'active' %}
+    <div class="session-banner session-active">
+        <span class="status-dot"></span>
+            Session Active — Live until {{ session_end.strftime('%I:%M %p') if session_end else 'ongoing' }}    </div>
+    {% elif session_status == 'upcoming' %}
+    <div class="session-banner session-upcoming">
+        <span class="status-dot"></span>
+        Session starts at {{ thread.appointment.scheduled_for.strftime('%I:%M %p') }}
+    </div>
+    {% else %}
+    <div class="session-banner session-ended">
+        <span class="status-dot"></span>
+        Session Ended — This chat is read-only
+    </div>
+    {% endif %}
+
+    <div class="messages-area" id="messagesArea">
+        {% set last_date = none %}
+        {% for msg in messages %}
+            {% set msg_date = msg.created_at.strftime('%b %d, %Y') %}
+            {% if msg_date != last_date %}
+                <div class="message-date-divider">{{ msg_date }}</div>
+                {% set last_date = msg_date %}
+            {% endif %}
+            <div class="message-bubble {{ 'sent' if msg.sender_id == current_user.id else 'received' }}" data-msg-id="{{ msg.id }}">
+                {{ msg.body }}
+                <span class="message-time">{{ msg.created_at.strftime('%I:%M %p') }}</span>
+            </div>
+        {% endfor %}
+    </div>
+
+    {# Input area — disabled if session not active #}
+    {% if session_status == 'active' or not thread.appointment %}
+    <form method="POST" action="{{ url_for('chat.thread_view', thread_id=thread.id) }}" class="input-area" id="chatForm">
+        {{ form.hidden_tag() }}
+        {{ form.thread_id() }}
+        <textarea name="body" id="messageInput" placeholder="Type a message..." rows="1" required maxlength="4000"></textarea>
+        <button type="submit">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="22" y1="2" x2="11" y2="13"/>
+                <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+            </svg>
+            Send
+        </button>
+    </form>
+    {% else %}
+    <div class="input-area input-disabled">
+        <div class="disabled-message">
+            {% if session_status == 'upcoming' %}
+            ⏳ This session hasn't started yet. Come back at the scheduled time.
+            {% else %}
+            ⏱ This session has ended. You can no longer send messages.
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const messagesArea = document.getElementById('messagesArea');
+const messageInput = document.getElementById('messageInput');
+const chatForm = document.getElementById('chatForm');
+const threadId = {{ thread.id }};
+let lastMessageId = {{ messages[-1].id if messages else 0 }};
+let isAtBottom = true;
+
+// Scroll to bottom on load
+messagesArea.scrollTop = messagesArea.scrollHeight;
+
+// Detect if user is at bottom
+messagesArea.addEventListener('scroll', () => {
+    isAtBottom = messagesArea.scrollHeight - messagesArea.scrollTop - messagesArea.clientHeight < 50;
+});
+
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+{% if session_status == 'active' or not thread.appointment %}
+// Auto-resize textarea
+messageInput.addEventListener('input', function() {
+    this.style.height = 'auto';
+    this.style.height = Math.min(this.scrollHeight, 120) + 'px';
+});
+
+// Enter to send, Shift+Enter for new line
+messageInput.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        const body = this.value.trim();
+        if (body) {
+            sendMessage(body);
+            this.value = '';
+            this.style.height = 'auto';
+        }
+    }
+});
+
+// Also handle Send button click
+chatForm.addEventListener('submit', function(e) {
+    e.preventDefault();
+    const body = messageInput.value.trim();
+    if (body) {
+        sendMessage(body);
+        messageInput.value = '';
+        messageInput.style.height = 'auto';
+    }
+});
+
+function sendMessage(body) {
+    const formData = new FormData();
+    formData.append('body', body);
+    formData.append('thread_id', threadId);
+    
+    // Add CSRF token
+    const csrfToken = document.querySelector('input[name="csrf_token"]');
+    if (csrfToken) formData.append('csrf_token', csrfToken.value);
+
+    fetch(`/chat/${threadId}`, {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    })
+    .then(r => {
+        if (r.redirected) {
+            // Server returned redirect (session ended, etc.)
+            window.location.href = r.url;
+            return;
+        }
+        // Message sent successfully, poll immediately
+        pollMessages();
+    })
+    .catch(err => console.error('Send error:', err));
+}
+{% endif %}
+
+// Polling for new messages
+function pollMessages() {
+    console.log('Polling for messages after ID:', lastMessageId);
+    
+    fetch(`/chat/${threadId}/poll?after=${lastMessageId}`)
+        .then(r => {
+            console.log('Poll response status:', r.status);
+            return r.json();
+        })
+        .then(data => {
+            console.log('Poll received', data.length, 'messages:', data);
+            
+            if (data.length === 0) return;
+            
+            let currentDate = '{{ messages[-1].created_at.strftime("%b %d, %Y") if messages else "" }}';
+            console.log('Current date divider:', currentDate);
+            
+            data.forEach(msg => {
+                console.log('Processing message:', msg.id, msg.body.substring(0, 20));
+                
+                if (msg.date !== currentDate) {
+                    const divider = document.createElement('div');
+                    divider.className = 'message-date-divider';
+                    divider.textContent = msg.date;
+                    messagesArea.appendChild(divider);
+                    currentDate = msg.date;
+                }
+                
+                const bubble = document.createElement('div');
+                bubble.className = `message-bubble ${msg.is_me ? 'sent' : 'received'}`;
+                bubble.dataset.msgId = msg.id;
+                bubble.innerHTML = `${escapeHtml(msg.body)}<span class="message-time">${msg.time}</span>`;
+                messagesArea.appendChild(bubble);
+                
+                lastMessageId = msg.id;
+                console.log('Updated lastMessageId to:', lastMessageId);
+            });
+            
+            if (isAtBottom) {
+                messagesArea.scrollTop = messagesArea.scrollHeight;
+            }
+        })
+        .catch(err => console.error('Poll error:', err));
+}
+
+setInterval(pollMessages, 1000);
+</script>
+{% endblock %}
