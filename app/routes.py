@@ -72,21 +72,35 @@ def therapist_verified_required(view):
 # ---------------------------------------------------------------------------
 
 @auth_bp.route("/", methods=["GET", "POST"])
-@limiter.limit("10 per minute")  # blunts credential stuffing / brute force (#28)
+@limiter.limit("10 per minute")
 def login_signup():
-    if current_user.is_authenticated:
-        return _dashboard_for(current_user)
+    print("REQUEST METHOD:", request.method)
 
     login_form = LoginForm(prefix="login")
     signup_form = SignupForm(prefix="signup")
 
-    if login_form.submit.data and login_form.validate_on_submit():
-        return _handle_login(login_form)
+    if login_form.submit.data:
+        result = login_form.validate_on_submit()
+        print("LOGIN validate:", result)
+        print("LOGIN errors:", login_form.errors)
 
-    if signup_form.submit.data and signup_form.validate_on_submit():
-        return _handle_signup(signup_form)
+        if result:
+            return _handle_login(login_form)
 
-    return render_template("auth.html", login_form=login_form, signup_form=signup_form)
+    if signup_form.submit.data:
+        result = signup_form.validate_on_submit()
+        print("SIGNUP validate:", result)
+        print("SIGNUP errors:", signup_form.errors)
+
+        if result:
+            print("CALLING _handle_signup()")
+            return _handle_signup(signup_form)
+
+    return render_template(
+        "auth.html",
+        login_form=login_form,
+        signup_form=signup_form,
+    )
 
 
 def _handle_login(form):
