@@ -1,0 +1,35 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Virtual environment
+venv/
+
+# Flask
+instance/
+.webassets-cache
+
+# Environment variables — NEVER COMMIT THESE (#2, #3, #13)
+.env
+.flaskenv
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+
+# Logs
+logs/
+
+# Migrations (keep in version control usually, but cache files)
+migrations/__pycache__/
+migrations/versions/__pycache__/
+
+# VS Code
+.vscode/
+
+# Mac / Windows
+.DS_Store
+Thumbs.db

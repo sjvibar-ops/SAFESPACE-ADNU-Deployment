@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Access Denied — SafeSpace</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/safespace.css') }}">
+</head>
+<body>
+    <div class="error-page">
+        <div class="error-illustration">
+            <svg viewBox="0 0 160 160" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <circle cx="80" cy="80" r="70" fill="var(--primary-light)" opacity="0.6"/>
+                <circle cx="80" cy="80" r="55" fill="var(--primary-light)" opacity="0.8"/>
+                <circle cx="80" cy="80" r="40" fill="var(--primary)" opacity="0.15"/>
+                <path d="M55 65C55 65 60 55 70 55C80 55 85 65 85 65" stroke="var(--text-dark)" stroke-width="3" stroke-linecap="round" fill="none"/>
+                <path d="M95 65C95 65 100 55 110 55C120 55 125 65 125 65" stroke="var(--text-dark)" stroke-width="3" stroke-linecap="round" fill="none"/>
+                <circle cx="65" cy="60" r="4" fill="var(--text-dark)"/>
+                <circle cx="115" cy="60" r="4" fill="var(--text-dark)"/>
+                <path d="M70 100C70 100 80 90 90 100" stroke="var(--text-dark)" stroke-width="3" stroke-linecap="round" fill="none"/>
+                <path d="M50 110C50 110 65 125 80 125C95 125 110 110 110 110" stroke="var(--danger)" stroke-width="2.5" stroke-linecap="round" fill="none" opacity="0.4"/>
+                <rect x="45" y="35" width="12" height="4" rx="2" fill="var(--primary)" opacity="0.4" transform="rotate(-15 51 37)"/>
+                <rect x="105" y="30" width="10" height="3" rx="1.5" fill="var(--primary)" opacity="0.3" transform="rotate(20 110 31.5)"/>
+            </svg>
+        </div>
+        <div class="error-code">403</div>
+        <h1 class="error-title">Access Denied</h1>
+        <p class="error-message">
+            You don't have permission to access this page. If you think this is a mistake, please contact support.
+        </p>
+        <div class="error-actions">
+            <a href="{{ url_for('auth.login_signup') }}" class="btn-error btn-primary-error">
+                <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18"/>
+                </svg>
+                Back to Home
+            </a>
+            <button onclick="history.back()" class="btn-error btn-outline-error">
+                Go Back
+            </button>
+        </div>
+        <div class="error-dots">
+            <div class="error-dot"></div>
+            <div class="error-dot"></div>
+            <div class="error-dot"></div>
+        </div>
+    </div>
+</body>
+</html>
