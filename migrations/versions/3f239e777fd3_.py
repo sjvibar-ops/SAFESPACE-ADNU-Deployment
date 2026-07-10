@@ -1,8 +1,8 @@
-"""Initial migration
+"""empty message
 
-Revision ID: e291f02e3abe
-Revises: b7d859bf4021
-Create Date: 2026-07-01 00:43:30.621133
+Revision ID: 3f239e777fd3
+Revises: 
+Create Date: 2026-07-11 01:06:24.363054
 
 """
 from alembic import op
@@ -10,8 +10,8 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision = 'e291f02e3abe'
-down_revision = 'b7d859bf4021'
+revision = '3f239e777fd3'
+down_revision = None
 branch_labels = None
 depends_on = None
 
@@ -86,6 +86,8 @@ def upgrade():
     sa.Column('notes', sa.Text(), nullable=True),
     sa.Column('therapist_notes', sa.Text(), nullable=True),
     sa.Column('responded_at', sa.DateTime(), nullable=True),
+    sa.Column('session_end', sa.DateTime(), nullable=True),
+    sa.Column('duration_minutes', sa.Integer(), nullable=False),
     sa.Column('created_at', sa.DateTime(), nullable=True),
     sa.Column('updated_at', sa.DateTime(), nullable=True),
     sa.ForeignKeyConstraint(['therapist_id'], ['therapist.user_id'], ),
@@ -116,25 +118,6 @@ def upgrade():
     with op.batch_alter_table('availability_slot', schema=None) as batch_op:
         batch_op.create_index(batch_op.f('ix_availability_slot_therapist_id'), ['therapist_id'], unique=False)
 
-    op.create_table('chat_thread',
-    sa.Column('id', sa.Integer(), nullable=False),
-    sa.Column('thread_type', sa.String(length=20), nullable=False),
-    sa.Column('user_id', sa.Integer(), nullable=True),
-    sa.Column('therapist_id', sa.Integer(), nullable=True),
-    sa.Column('peer_listener_id', sa.Integer(), nullable=True),
-    sa.Column('is_active', sa.Boolean(), nullable=False),
-    sa.Column('closed_at', sa.DateTime(), nullable=True),
-    sa.Column('created_at', sa.DateTime(), nullable=True),
-    sa.Column('updated_at', sa.DateTime(), nullable=True),
-    sa.ForeignKeyConstraint(['peer_listener_id'], ['user.id'], ),
-    sa.ForeignKeyConstraint(['therapist_id'], ['therapist.user_id'], ),
-    sa.ForeignKeyConstraint(['user_id'], ['user.id'], ),
-    sa.PrimaryKeyConstraint('id')
-    )
-    with op.batch_alter_table('chat_thread', schema=None) as batch_op:
-        batch_op.create_index(batch_op.f('ix_chat_thread_therapist_id'), ['therapist_id'], unique=False)
-        batch_op.create_index(batch_op.f('ix_chat_thread_user_id'), ['user_id'], unique=False)
-
     op.create_table('client_note',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('therapist_id', sa.Integer(), nullable=False),
@@ -152,6 +135,29 @@ def upgrade():
     with op.batch_alter_table('client_note', schema=None) as batch_op:
         batch_op.create_index(batch_op.f('ix_client_note_client_id'), ['client_id'], unique=False)
         batch_op.create_index(batch_op.f('ix_client_note_therapist_id'), ['therapist_id'], unique=False)
+
+    op.create_table('chat_thread',
+    sa.Column('id', sa.Integer(), nullable=False),
+    sa.Column('thread_type', sa.String(length=20), nullable=False),
+    sa.Column('user_id', sa.Integer(), nullable=True),
+    sa.Column('therapist_id', sa.Integer(), nullable=True),
+    sa.Column('appointment_id', sa.Integer(), nullable=True),
+    sa.Column('session_duration', sa.Integer(), nullable=False),
+    sa.Column('peer_listener_id', sa.Integer(), nullable=True),
+    sa.Column('is_active', sa.Boolean(), nullable=False),
+    sa.Column('closed_at', sa.DateTime(), nullable=True),
+    sa.Column('created_at', sa.DateTime(), nullable=True),
+    sa.Column('updated_at', sa.DateTime(), nullable=True),
+    sa.ForeignKeyConstraint(['appointment_id'], ['appointment.id'], ),
+    sa.ForeignKeyConstraint(['peer_listener_id'], ['user.id'], ),
+    sa.ForeignKeyConstraint(['therapist_id'], ['therapist.user_id'], ),
+    sa.ForeignKeyConstraint(['user_id'], ['user.id'], ),
+    sa.PrimaryKeyConstraint('id')
+    )
+    with op.batch_alter_table('chat_thread', schema=None) as batch_op:
+        batch_op.create_index(batch_op.f('ix_chat_thread_appointment_id'), ['appointment_id'], unique=False)
+        batch_op.create_index(batch_op.f('ix_chat_thread_therapist_id'), ['therapist_id'], unique=False)
+        batch_op.create_index(batch_op.f('ix_chat_thread_user_id'), ['user_id'], unique=False)
 
     op.create_table('chat_message',
     sa.Column('id', sa.Integer(), nullable=False),
@@ -184,16 +190,17 @@ def downgrade():
         batch_op.drop_index(batch_op.f('ix_chat_message_sender_id'))
 
     op.drop_table('chat_message')
+    with op.batch_alter_table('chat_thread', schema=None) as batch_op:
+        batch_op.drop_index(batch_op.f('ix_chat_thread_user_id'))
+        batch_op.drop_index(batch_op.f('ix_chat_thread_therapist_id'))
+        batch_op.drop_index(batch_op.f('ix_chat_thread_appointment_id'))
+
+    op.drop_table('chat_thread')
     with op.batch_alter_table('client_note', schema=None) as batch_op:
         batch_op.drop_index(batch_op.f('ix_client_note_therapist_id'))
         batch_op.drop_index(batch_op.f('ix_client_note_client_id'))
 
     op.drop_table('client_note')
-    with op.batch_alter_table('chat_thread', schema=None) as batch_op:
-        batch_op.drop_index(batch_op.f('ix_chat_thread_user_id'))
-        batch_op.drop_index(batch_op.f('ix_chat_thread_therapist_id'))
-
-    op.drop_table('chat_thread')
     with op.batch_alter_table('availability_slot', schema=None) as batch_op:
         batch_op.drop_index(batch_op.f('ix_availability_slot_therapist_id'))
 
