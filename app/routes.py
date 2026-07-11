@@ -398,33 +398,49 @@ def therapists():
 @login_required
 @role_required("therapist")
 def dashboard():
-    from app.forms import RespondAppointmentForm  # add this
+    from app.forms import RespondAppointmentForm
     
-    today_start = datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0)
+    today_start = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
     today_end = today_start.replace(hour=23, minute=59, second=59)
 
     sessions_today = Appointment.query.filter(
         Appointment.therapist_id == current_user.id,
         Appointment.scheduled_for.between(today_start, today_end),
         Appointment.status == "confirmed",
-    ).all()
-    pending = Appointment.query.filter_by(therapist_id=current_user.id, status="pending").all()
+    ).order_by(Appointment.scheduled_for.asc()).all()
+
+    # Compute end times for display
+    from datetime import timedelta
+    for session in sessions_today:
+        session.end_time = session.scheduled_for + timedelta(minutes=session.duration_minutes or 50)
+
+    next_session = Appointment.query.filter(
+        Appointment.therapist_id == current_user.id,
+        Appointment.status == "confirmed",
+        Appointment.scheduled_for >= datetime.now(),
+    ).order_by(Appointment.scheduled_for.asc()).first()
+
+    pending = Appointment.query.filter_by(
+        therapist_id=current_user.id, 
+        status="pending"
+    ).order_by(Appointment.scheduled_for.asc()).all()
+
     active_clients = (
         db.session.query(Appointment.user_id)
         .filter_by(therapist_id=current_user.id, status="confirmed")
         .distinct().count()
     )
     
-    respond_form = RespondAppointmentForm()  # add this
+    respond_form = RespondAppointmentForm()
     
     return render_template(
         "therapist/dashboard.html",
         sessions_today=sessions_today,
+        next_session=next_session,
         pending=pending,
         active_clients=active_clients,
-        respond_form=respond_form,  # add this
+        respond_form=respond_form,
     )
-
 
 @therapist_bp.route("/sessions")
 @login_required
