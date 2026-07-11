@@ -164,7 +164,7 @@ class StartChatForm(FlaskForm):
 
 from wtforms import TimeField, DateField, SelectField, TextAreaField, SubmitField
 from wtforms.validators import DataRequired, ValidationError
-from datetime import time
+from datetime import datetime, time
 
 class BookAppointmentForm(FlaskForm):
     therapist_id = SelectField("Therapist", coerce=int, validators=[DataRequired()])
@@ -177,9 +177,6 @@ class BookAppointmentForm(FlaskForm):
     ], validators=[DataRequired()])
     notes = TextAreaField("Notes (optional)", validators=[Length(max=500)])
     submit = SubmitField("Book Appointment")
-    
-    def validate_start_time(self, field):
-        pass  # temporarily disable all validation
 
 
 class RespondAppointmentForm(FlaskForm):
@@ -213,13 +210,12 @@ class ScheduleSlotForm(FlaskForm):
 # client-submitted role)
 # ---------------------------------------------------------------------------
 class AccountSettingsForm(FlaskForm):
-    display_name = StringField(
-        "Display name",
-        validators=[Optional(), Length(max=80), no_html_tags],
-    )
-    email = StringField("Email", validators=[DataRequired(), Email(), Length(max=254)])
-    form_name = HiddenField(default="account")
-    submit = SubmitField("Save changes")
+    display_name = StringField('Display Name', validators=[Length(max=80)])
+    email = StringField('Email', validators=[DataRequired(), Email()])
+    dark_mode = BooleanField('Dark Mode')
+    form_name = HiddenField(default='account')
+    submit = SubmitField('Save Changes')
+    
 
 
 class ChangePasswordForm(FlaskForm):

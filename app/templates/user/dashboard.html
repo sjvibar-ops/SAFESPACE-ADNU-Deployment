@@ -70,7 +70,7 @@
                 <div class="appointment-card">
                     <div class="appt-info">
                         <h4>{{ appt.therapist.user.display_name or 'Therapist' }}</h4>
-                        <p>{{ appt.scheduled_for.strftime('%A, %b %d · %I:%M–%I:%M %p') }}</p>
+                        <p>{{ appt.scheduled_for.strftime('%A, %b %d · %I:%M') }}–{{ appt.end_time.strftime('%I:%M %p') }}</p>
                     </div>
                     <span class="status-badge {{ appt.status }}">{{ appt.status.title() }}</span>
                 </div>
@@ -85,15 +85,17 @@
     <div class="content-sidebar">
         
         <!-- Mood Check-in -->
-        <div class="widget-card">
+                <!-- Mood Check-in -->
+        <div class="widget-card" id="mood-widget">
             <h4>How are you feeling?</h4>
-            <div class="mood-options">
-                <button class="mood-btn" title="Great">😊</button>
-                <button class="mood-btn" title="Okay">😐</button>
-                <button class="mood-btn" title="Down">😔</button>
-                <button class="mood-btn" title="Overwhelmed">😰</button>
+            <div class="mood-options" id="mood-options">
+                <button class="mood-btn" data-mood="great" title="Great">😊</button>
+                <button class="mood-btn" data-mood="okay" title="Okay">😐</button>
+                <button class="mood-btn" data-mood="down" title="Down">😔</button>
+                <button class="mood-btn" data-mood="overwhelmed" title="Overwhelmed">😰</button>
             </div>
-            <p class="mood-hint">Tap to check in</p>
+            <p class="mood-hint" id="mood-hint">Tap to check in</p>
+            <p class="mood-response" id="mood-response" style="display:none;"></p>
         </div>
 
         <!-- Wellness Tip -->
@@ -124,18 +126,68 @@
             <a href="{{ url_for('user.my_chats') }}" class="widget-link">Start a peer chat →</a>
         </div>
 
-        <!-- Session Countdown -->
+         <!-- Session Countdown -->
         {% if upcoming %}
         <div class="widget-card">
             <h4>Next Session</h4>
+            {% set next = upcoming[0] %}
+            {% set diff = next.scheduled_for - now %}
+            {% set total_seconds = diff.total_seconds() %}
+            {% set hours = (total_seconds // 3600)|int %}
+            {% set minutes = ((total_seconds % 3600) // 60)|int %}
+            
             <div class="countdown">
-                <span class="countdown-time">2h 15m</span>
-                <p>until your appointment</p>
+                {% if total_seconds > 0 %}
+                    <span class="countdown-time">
+                        {% if hours > 0 %}{{ hours }}h {% endif %}{{ minutes }}m
+                    </span>
+                    <p>until your appointment</p>
+                    <p class="countdown-detail">{{ next.scheduled_for.strftime('%a, %I:%M %p') }}</p>
+                {% else %}
+                    <span class="countdown-time live">● Live</span>
+                    <p>Session in progress</p>
+                {% endif %}
             </div>
-            <a href="{{ url_for('user.appointments') }}" class="widget-link">View details →</a>
+            <a href="{{ url_for('chat.thread_view', thread_id=next.chat_thread.id) if next.chat_thread else url_for('user.appointments') }}" class="widget-link">
+                {{ 'Join session →' if total_seconds <= 0 else 'View details →' }}
+            </a>
         </div>
         {% endif %}
 
     </div>
 </div>
+
+{% block extra_js %}
+<script>
+const moodMessages = {
+    great: "That's awesome! Keep that positive energy going! 🌟",
+    okay: "Thanks for checking in. Take it one step at a time. 🙂",
+    down: "It's okay to not be okay. We're here for you. 💙",
+    overwhelmed: "Take a deep breath. You've got this, one moment at a time. 🫂"
+};
+
+document.querySelectorAll('.mood-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+        const mood = this.dataset.mood;
+        const response = document.getElementById('mood-response');
+        const hint = document.getElementById('mood-hint');
+        const options = document.getElementById('mood-options');
+        
+        // Hide buttons and hint, show response
+        options.style.display = 'none';
+        hint.style.display = 'none';
+        response.textContent = moodMessages[mood];
+        response.style.display = 'block';
+        
+        // Optional: reset after 5 seconds
+        setTimeout(() => {
+            response.style.display = 'none';
+            options.style.display = 'flex';
+            hint.style.display = 'block';
+        }, 5000);
+    });
+});
+</script>
+{% endblock %}
+
 {% endblock %}

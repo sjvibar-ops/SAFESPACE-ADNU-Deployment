@@ -7,7 +7,7 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/safespace.css') }}">
     {% block extra_css %}{% endblock %}
 </head>
-<body class="dashboard-body therapist-body">
+<body class="dashboard-body therapist-body  {% if current_user.is_authenticated and current_user.dark_mode %}dark-mode{% endif %}">
     <!-- Top Navigation -->
     <nav class="top-nav">
         <div class="nav-brand">

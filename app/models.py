@@ -91,6 +91,7 @@ class User(UserMixin, db.Model, TimestampMixin, SoftDeleteMixin):
     email = db.Column(db.String(254), unique=True, nullable=False, index=True)
     # Email hash for lookup logging without exposing raw email (#35)
     email_hash = db.Column(db.String(64), unique=True, nullable=False, index=True)
+    dark_mode = db.Column(db.Boolean, default=False, nullable=True)
 
     password_hash = db.Column(db.String(256), nullable=False)
     # Track password changes to invalidate old sessions (#25)
@@ -391,8 +392,8 @@ class ChatThread(db.Model, TimestampMixin):
 
     def is_session_active(self):
         if not self.appointment:
-            return True
-        now = datetime.now()  # LOCAL time, not UTC
+            return False  # No appointment = no active session
+        now = datetime.now()
         start = self.appointment.scheduled_for
         
         if start.tzinfo is not None:
@@ -404,8 +405,8 @@ class ChatThread(db.Model, TimestampMixin):
 
     def session_status(self):
         if not self.appointment:
-            return "active"
-        now = datetime.now()  # LOCAL time
+            return "ended"  # No appointment = session ended
+        now = datetime.now()
         start = self.appointment.scheduled_for
         
         if start.tzinfo is not None:
