@@ -464,6 +464,8 @@ class AvailabilitySlot(db.Model, TimestampMixin):
     start_time = db.Column(db.Time, nullable=False)
     end_time = db.Column(db.Time, nullable=False)
 
+    session_length_minutes = db.Column(db.Integer, default=50, nullable=False)
+
     is_recurring = db.Column(db.Boolean, default=True, nullable=False)
     specific_date = db.Column(db.Date, nullable=True)  # For one-off slots
 
