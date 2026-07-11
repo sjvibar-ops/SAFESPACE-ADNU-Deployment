@@ -250,20 +250,32 @@ def dashboard():
         .limit(5)
         .all()
     )
+    
+    # Compute end times for display
+    from datetime import timedelta
+    for appt in upcoming:
+        appt.end_time = appt.scheduled_for + timedelta(minutes=appt.duration_minutes or 50)
+    
     chats_this_week = ChatThread.query.filter(
         ChatThread.user_id == current_user.id,
         ChatThread.is_active == True,
     ).count()
-    return render_template("user/dashboard.html", upcoming=upcoming, chats_this_week=chats_this_week, today_tip=get_today_tip() )
+    
+    return render_template(
+        "user/dashboard.html",
+        upcoming=upcoming,
+        chats_this_week=chats_this_week,
+        today_tip=get_today_tip(),
+        now=datetime.now(),
+    )
 
 
 @user_bp.route("/chats")
 @login_required
 @role_required("user")
 def my_chats():
-    now = datetime.now(timezone.utc)
+    now = datetime.now()
     
-    # Get all threads for this user
     all_threads = ChatThread.query.filter(
         ChatThread.user_id == current_user.id,
     ).order_by(ChatThread.updated_at.desc()).all()
@@ -273,21 +285,32 @@ def my_chats():
     upcoming_threads = []
     
     for t in all_threads:
-        if t.thread_type == "therapist" and t.appointment:
-            status = t.session_status()
-            if status == "active":
-                active_threads.append(t)
-            elif status == "upcoming":
-                upcoming_threads.append(t)
-            else:
-                # Session ended — mark thread inactive so it doesn't show in main list
+        if t.thread_type == "therapist":
+            if not t.appointment:
+                # Orphaned thread — mark inactive
                 if t.is_active:
                     t.is_active = False
                     db.session.commit()
                 past_threads.append(t)
+                continue
+            
+            status = t.session_status()
+            
+            if status == "ended" and t.is_active:
+                t.is_active = False
+                db.session.commit()
+            
+            if t.is_active and status == "active":
+                active_threads.append(t)
+            elif status == "upcoming":
+                upcoming_threads.append(t)
+            else:
+                past_threads.append(t)
         else:
-            # Peer/AI threads — show as active
-            active_threads.append(t)
+            if t.is_active:
+                active_threads.append(t)
+            else:
+                past_threads.append(t)
     
     start_chat_form = StartChatForm()
     return render_template(
@@ -341,54 +364,7 @@ def appointments():
 @login_required
 @role_required("user")
 def settings():
-    account_form = AccountSettingsForm(obj=current_user)
-    password_form = ChangePasswordForm()
-    notif_form = NotificationSettingsForm()
-    delete_form = DeleteAccountForm()
-
-    if request.method == "POST":
-        # Check which form was submitted by looking at the hidden form_name field
-        form_name = request.form.get("form_name")
-
-        if form_name == "account" and account_form.validate_on_submit():
-            current_user.display_name = account_form.display_name.data
-            current_user.email = account_form.email.data
-            db.session.commit()
-            flash("Account updated successfully.", "success")
-            return redirect(url_for("user.settings"))
-
-        elif form_name == "password" and password_form.validate_on_submit():
-            if not current_user.check_password(password_form.current_password.data):
-                flash("Current password is incorrect.", "error")
-            else:
-                current_user.set_password(password_form.new_password.data)
-                db.session.commit()
-                flash("Password updated successfully.", "success")
-            return redirect(url_for("user.settings"))
-
-        elif form_name == "notifications" and notif_form.validate_on_submit():
-            current_user.email_notifications = notif_form.email_notifications.data
-            current_user.sms_notifications = notif_form.sms_notifications.data
-            db.session.commit()
-            flash("Preferences saved.", "success")
-            return redirect(url_for("user.settings"))
-
-        elif form_name == "delete" and delete_form.validate_on_submit():
-            if not current_user.check_password(delete_form.password.data):
-                flash("Password is incorrect.", "error")
-            else:
-                db.session.delete(current_user)
-                db.session.commit()
-                flash("Account deleted.", "success")
-                return redirect(url_for("auth.logout"))
-
-    return render_template(
-        "user/settings.html",
-        account_form=account_form,
-        password_form=password_form,
-        notif_form=notif_form,
-        delete_form=delete_form,
-    )
+    return _shared_settings("user/settings.html")
 
 @user_bp.route("/therapists")
 @login_required
@@ -412,33 +388,49 @@ def therapists():
 @login_required
 @role_required("therapist")
 def dashboard():
-    from app.forms import RespondAppointmentForm  # add this
+    from app.forms import RespondAppointmentForm
     
-    today_start = datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0)
+    today_start = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
     today_end = today_start.replace(hour=23, minute=59, second=59)
 
     sessions_today = Appointment.query.filter(
         Appointment.therapist_id == current_user.id,
         Appointment.scheduled_for.between(today_start, today_end),
         Appointment.status == "confirmed",
-    ).all()
-    pending = Appointment.query.filter_by(therapist_id=current_user.id, status="pending").all()
+    ).order_by(Appointment.scheduled_for.asc()).all()
+
+    # Compute end times for display
+    from datetime import timedelta
+    for session in sessions_today:
+        session.end_time = session.scheduled_for + timedelta(minutes=session.duration_minutes or 50)
+
+    next_session = Appointment.query.filter(
+        Appointment.therapist_id == current_user.id,
+        Appointment.status == "confirmed",
+        Appointment.scheduled_for >= datetime.now(),
+    ).order_by(Appointment.scheduled_for.asc()).first()
+
+    pending = Appointment.query.filter_by(
+        therapist_id=current_user.id, 
+        status="pending"
+    ).order_by(Appointment.scheduled_for.asc()).all()
+
     active_clients = (
         db.session.query(Appointment.user_id)
         .filter_by(therapist_id=current_user.id, status="confirmed")
         .distinct().count()
     )
     
-    respond_form = RespondAppointmentForm()  # add this
+    respond_form = RespondAppointmentForm()
     
     return render_template(
         "therapist/dashboard.html",
         sessions_today=sessions_today,
+        next_session=next_session,
         pending=pending,
         active_clients=active_clients,
-        respond_form=respond_form,  # add this
+        respond_form=respond_form,
     )
-
 
 @therapist_bp.route("/sessions")
 @login_required
@@ -575,52 +567,80 @@ def settings():
 # always scoped to current_user — never accepts a target user id, #6)
 # ---------------------------------------------------------------------------
 
-def _shared_settings(template):
+def _shared_settings(template, extra_forms=None):
+    """
+    Shared settings logic for both user and therapist.
+    Uses form_name hidden field to detect which form was submitted.
+    """
     account_form = AccountSettingsForm(obj=current_user)
     password_form = ChangePasswordForm()
     notif_form = NotificationSettingsForm(obj=current_user)
     delete_form = DeleteAccountForm()
+    
+    # Extra forms passed by specific roles (e.g., therapist might add more)
+    extra_forms = extra_forms or {}
 
     if request.method == "POST":
-        if "display_name" in request.form and account_form.validate_on_submit():
+        form_name = request.form.get("form_name")
+        
+        # Account settings
+        if form_name == "account" and account_form.validate_on_submit():
             current_user.display_name = account_form.display_name.data
             current_user.email = account_form.email.data.lower().strip()
+            # Checkbox sends 'on' when checked, nothing when unchecked
+            current_user.dark_mode = 'dark_mode' in request.form
             db.session.commit()
             flash("Account updated.", "success")
             return redirect(request.path)
-
-        if "current_password" in request.form and password_form.validate_on_submit():
-            if not check_password_hash(current_user.password_hash, password_form.current_password.data):
+        
+        # Password change
+        elif form_name == "password" and password_form.validate_on_submit():
+            if not current_user.check_password(password_form.current_password.data):
                 flash("Current password is incorrect.", "danger")
-                return redirect(request.path)
-            current_user.password_hash = generate_password_hash(
-                password_form.new_password.data, method="pbkdf2:sha256:600000"
-            )
-            current_user.password_changed_at = datetime.now(timezone.utc)
-            db.session.commit()
-            # invalidate other active sessions here in a full build (#25)
-            flash("Password changed.", "success")
+            else:
+                current_user.set_password(password_form.new_password.data)
+                db.session.commit()
+                flash("Password changed.", "success")
             return redirect(request.path)
-
-        if "confirm" in request.form and delete_form.validate_on_submit():
-            if not check_password_hash(current_user.password_hash, delete_form.password.data):
-                flash("Incorrect password.", "danger")
-                return redirect(request.path)
-            current_user.is_active = False  # soft delete; preserves audit trail (#42)
+        
+        # Notification preferences (including quiet hours)
+        elif form_name == "notifications" and notif_form.validate_on_submit():
+            current_user.email_notifications = notif_form.email_notifications.data
+            current_user.sms_notifications = notif_form.sms_notifications.data
+            current_user.quiet_hours_start = notif_form.quiet_hours_start.data
+            current_user.quiet_hours_end = notif_form.quiet_hours_end.data
             db.session.commit()
-            logout_user()
-            session.clear()
-            flash("Your account has been deleted.", "info")
-            return redirect(url_for("auth.login_signup"))
+            flash("Preferences saved.", "success")
+            return redirect(request.path)
+        
+        # Account deletion
+        elif form_name == "delete" and delete_form.validate_on_submit():
+            if not current_user.check_password(delete_form.password.data):
+                flash("Incorrect password.", "danger")
+            else:
+                current_user.is_active = False
+                db.session.commit()
+                logout_user()
+                session.clear()
+                flash("Your account has been deleted.", "info")
+                return redirect(url_for("auth.login_signup"))
+        
+        # Handle any extra forms
+        elif form_name in extra_forms:
+            extra_form = extra_forms[form_name]
+            if extra_form.validate_on_submit():
+                # Handle in caller
+                pass
 
-    return render_template(
-        template,
-        account_form=account_form,
-        password_form=password_form,
-        notif_form=notif_form,
-        delete_form=delete_form,
-    )
-
+    context = {
+        "account_form": account_form,
+        "password_form": password_form,
+        "notif_form": notif_form,
+        "delete_form": delete_form,
+    }
+    context.update(extra_forms)
+    
+    return render_template(template, **context)
 
 # ---------------------------------------------------------------------------
 # Chat — shared between user and therapist, scoped to thread membership

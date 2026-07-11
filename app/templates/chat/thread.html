@@ -61,7 +61,7 @@
     </div>
 
     {# Input area — disabled if session not active #}
-    {% if session_status == 'active' or not thread.appointment %}
+    {% if session_status == 'active' and thread.appointment %}
     <form method="POST" action="{{ url_for('chat.thread_view', thread_id=thread.id) }}" class="input-area" id="chatForm">
         {{ form.hidden_tag() }}
         {{ form.thread_id() }}
@@ -77,7 +77,9 @@
     {% else %}
     <div class="input-area input-disabled">
         <div class="disabled-message">
-            {% if session_status == 'upcoming' %}
+            {% if not thread.appointment %}
+            ⏱ This session has ended. You can no longer send messages.
+            {% elif session_status == 'upcoming' %}
             ⏳ This session hasn't started yet. Come back at the scheduled time.
             {% else %}
             ⏱ This session has ended. You can no longer send messages.
@@ -111,7 +113,7 @@ function escapeHtml(text) {
     return div.innerHTML;
 }
 
-{% if session_status == 'active' or not thread.appointment %}
+{% if session_status == 'active' and thread.appointment %}
 // Auto-resize textarea
 messageInput.addEventListener('input', function() {
     this.style.height = 'auto';

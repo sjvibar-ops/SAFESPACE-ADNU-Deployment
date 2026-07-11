@@ -2540,7 +2540,171 @@ body {
     background: #fff;
 }
 
+/* ==========================================================================
+   DARK MODE
+   ========================================================================== */
 
+   #darkModeCheckbox {
+    display: none !important;
+    position: absolute;
+    opacity: 0;
+}
+.dark-mode-group {
+    margin: 16px 0;
+}
+
+.dark-mode-group > label:first-child {
+    display: block;
+    font-size: 14px;
+    font-weight: 500;
+    color: #555;
+    margin-bottom: 8px;
+}
+
+/* Replace the existing theme-toggle CSS with this */
+.theme-toggle {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    cursor: pointer;
+}
+
+.theme-toggle input[type="checkbox"],
+.theme-toggle input {
+    position: absolute;
+    opacity: 0;
+    width: 0;
+    height: 0;
+    margin: 0;
+    padding: 0;
+    border: none;
+    appearance: none;
+    -webkit-appearance: none;
+    display: none !important;
+    visibility: hidden;
+}
+
+.toggle-slider {
+    position: relative;
+    width: 56px;
+    height: 28px;
+    background: #e0e0e0;
+    border-radius: 28px;
+    transition: background 0.3s;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 6px;
+    flex-shrink: 0;
+}
+
+.toggle-slider.active {
+    background: #2d8a6e;
+}
+
+.toggle-slider.active::before {
+    transform: translateX(28px);
+}
+
+.toggle-slider .icon {
+    font-size: 14px;
+    z-index: 1;
+    transition: opacity 0.3s;
+    pointer-events: none;
+}
+
+.toggle-slider .sun {
+    opacity: 1;
+    transition: opacity 0.3s;
+}
+
+.toggle-slider.active .sun {
+    opacity: 0.3;
+}
+
+.toggle-slider .moon {
+    opacity: 0.3;
+    transition: opacity 0.3s;
+}
+
+.toggle-slider.active .moon {
+    opacity: 1;
+}
+
+.toggle-slider::before {
+    content: "";
+    position: absolute;
+    width: 22px;
+    height: 22px;
+    background: white;
+    border-radius: 50%;
+    top: 3px;
+    left: 3px;
+    transition: transform 0.3s;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+    z-index: 2;
+}
+
+.theme-toggle input:checked ~ .toggle-slider {
+    background: #2d8a6e;
+}
+
+.theme-toggle input:checked ~ .toggle-slider::before {
+    transform: translateX(28px);
+}
+
+.theme-toggle input:checked ~ .toggle-slider .sun {
+    opacity: 0.3;
+}
+
+.theme-toggle input:checked ~ .toggle-slider .moon {
+    opacity: 1;
+}
+
+.toggle-label {
+    font-size: 14px;
+    color: #555;
+}
+
+body.dark-mode {
+    background: #1a1a2e;
+    color: #e0e0e0;
+}
+
+body.dark-mode .sidebar {
+    background: #16213e;
+}
+
+body.dark-mode .main-content {
+    background: #1a1a2e;
+}
+
+body.dark-mode .chat-container,
+body.dark-mode .stat-card,
+body.dark-mode .widget-card {
+    background: #16213e;
+    border-color: #0f3460;
+}
+
+body.dark-mode .message-bubble.received {
+    background: #0f3460;
+    color: #e0e0e0;
+}
+
+body.dark-mode .message-bubble.sent {
+    background: #2d8a6e;
+}
+
+body.dark-mode .input-area {
+    background: #16213e;
+    border-color: #0f3460;
+}
+
+body.dark-mode textarea {
+    background: #1a1a2e;
+    color: #e0e0e0;
+    border-color: #0f3460;
+}
 /* ==========================================================================
    RESPONSIVE
    ========================================================================== */

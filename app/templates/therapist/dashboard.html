@@ -39,8 +39,8 @@
     <div class="stat-card">
         <p class="stat-label">NEXT SESSION</p>
         <p class="stat-value">
-            {% if sessions_today %}
-                {{ sessions_today[0].scheduled_for.strftime('%I:%M %p') }}
+            {% if next_session %}
+                {{ next_session.scheduled_for.strftime('%I:%M %p') }}
             {% else %}
                 —
             {% endif %}
@@ -55,8 +55,12 @@
         {% for session in sessions_today %}
         <div class="appointment-card session-card">
             <div class="appt-info">
-                <h4>Anonymous#{{ session.user_id }}</h4>
-                <p>{{ session.scheduled_for.strftime('%I:%M–%I:%M %p') }} · {{ session.session_type.title() }}</p>
+                <h4>{{ session.user.display_name or 'Client #' ~ session.user_id }}</h4>
+                <p>
+    {{ session.scheduled_for.strftime('%I:%M') }}–
+    {{ session.end_time.strftime('%I:%M %p') }}
+    · {{ session.session_type.title() }}
+</p>
             </div>
             <span class="status-badge confirmed">Confirmed</span>
         </div>
@@ -73,7 +77,7 @@
         {% for req in pending %}
         <div class="appointment-card request-card">
             <div class="appt-info">
-                <h4>Anonymous#{{ req.user_id }}</h4>
+                <h4>{{ req.user.display_name or 'Client #' ~ req.user_id }}</h4>
                 <p>Requested: {{ req.scheduled_for.strftime('%a, %b %d · %I:%M %p') }}</p>
             </div>
             <form method="POST" action="{{ url_for('therapist.respond_appointment') }}" class="request-actions">

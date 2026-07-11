@@ -33,6 +33,21 @@
             {{ account_form.email.label }}
             {{ account_form.email(placeholder="you@email.com") }}
         </div>
+        
+        <!-- Dark Mode Toggle -->
+        <div class="form-group dark-mode-group">
+    <label>Appearance</label>
+    <label class="theme-toggle" id="darkModeToggle">
+        <input type="checkbox" name="dark_mode" id="darkModeCheckbox" {% if current_user.dark_mode %}checked{% endif %}
+               style="position:absolute;opacity:0;width:0;height:0;">
+        <span class="toggle-slider">
+            <span class="icon sun">☀️</span>
+            <span class="icon moon">🌙</span>
+        </span>
+        <span class="toggle-label" id="darkModeLabel">{{ 'Dark Mode' if current_user.dark_mode else 'Light Mode' }}</span>
+    </label>
+</div>
+        
         {{ account_form.submit(class="btn-submit") }}
     </form>
 </div>
@@ -89,4 +104,40 @@
         {{ delete_form.submit(class="btn-submit btn-danger") }}
     </form>
 </div>
+{% endblock %}
+{% block extra_js %}
+<script>
+const darkModeToggle = document.getElementById('darkModeToggle');
+const darkModeCheckbox = document.getElementById('darkModeCheckbox');
+const darkModeLabel = document.getElementById('darkModeLabel');
+const toggleSlider = darkModeToggle.querySelector('.toggle-slider');
+const body = document.body;
+
+// Apply on page load
+if (darkModeCheckbox.checked) {
+    body.classList.add('dark-mode');
+    toggleSlider.classList.add('active');
+    darkModeLabel.textContent = 'Dark Mode';
+}
+
+darkModeToggle.addEventListener('click', function(e) {
+    // Don't toggle if clicking the actual checkbox
+    if (e.target === darkModeCheckbox) return;
+    
+    // Toggle checkbox
+    darkModeCheckbox.checked = !darkModeCheckbox.checked;
+    
+    // Toggle slider class
+    toggleSlider.classList.toggle('active', darkModeCheckbox.checked);
+    
+    // Apply/remove dark mode
+    if (darkModeCheckbox.checked) {
+        body.classList.add('dark-mode');
+        darkModeLabel.textContent = 'Dark Mode';
+    } else {
+        body.classList.remove('dark-mode');
+        darkModeLabel.textContent = 'Light Mode';
+    }
+});
+</script>
 {% endblock %}
