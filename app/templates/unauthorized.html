@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Authentication Required — SafeSpace</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/safespace.css') }}">
+    <style>
+        .unauthorized-container {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 40px 20px;
+            background: var(--bg);
+        }
+        .unauthorized-container h1 {
+            font-size: 4rem;
+            font-weight: 800;
+            color: var(--primary);
+            margin-bottom: 16px;
+        }
+        .unauthorized-container p {
+            color: var(--text-muted);
+            font-size: 1.1rem;
+            margin-bottom: 32px;
+            max-width: 400px;
+        }
+        .unauthorized-container .btn-submit {
+            text-decoration: none;
+            display: inline-block;
+        }
+    </style>
+</head>
+<body>
+    <div class="unauthorized-container">
+        <h1>401</h1>
+        <p>You need to sign in to access this page. Your session may have expired.</p>
+        <a href="{{ url_for('auth.login_signup') }}" class="btn-submit">Sign In</a>
+    </div>
+</body>
+</html>

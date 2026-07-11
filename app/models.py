@@ -442,6 +442,12 @@ class ChatMessage(db.Model, TimestampMixin):
         if len(body) > 4000:
             raise ValueError("Message too long (max 4000 chars)")
         return body.strip()
+    
+from datetime import time as _time
+BUSINESS_START = _time(8, 0)
+BUSINESS_END = _time(18, 0)
+LUNCH_START = _time(12, 0)
+LUNCH_END = _time(13, 0)
 
 # ---------------------------------------------------------------------------
 # Availability (therapist schedule)
@@ -469,6 +475,28 @@ class AvailabilitySlot(db.Model, TimestampMixin):
         if day not in allowed:
             raise ValueError(f"Invalid day: {day}")
         return day
+    
+    @validates("session_length_minutes")
+    def validate_session_length(self, key, value):
+        if value not in (50, 60):
+            raise ValueError("Session length must be 50 or 60 minutes")
+        return value
+
+    @validates("start_time")
+    def validate_start_time(self, key, value):
+        if value < BUSINESS_START:
+            raise ValueError("Availability cannot start before 8:00 AM")
+        return value
+
+    @validates("end_time")
+    def validate_end_time(self, key, value):
+        if value > BUSINESS_END:
+            raise ValueError("Availability cannot end after 6:00 PM")
+        if self.start_time and value <= self.start_time:
+            raise ValueError("End time must be after start time")
+        if self.start_time and self.start_time < LUNCH_END and value > LUNCH_START:
+            raise ValueError("Availability cannot overlap the 12:00–1:00 PM lunch break")
+        return value
 
 
 # ---------------------------------------------------------------------------

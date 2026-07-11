@@ -42,6 +42,12 @@ def no_html_tags(form, field):
     on render, never trust this alone."""
     if re.search(r"<[^>]+>", field.data or ""):
         raise ValidationError("HTML tags are not allowed in this field.")
+    
+from datetime import datetime, time
+BUSINESS_START = time(8, 0)
+BUSINESS_END = time(18, 0)
+LUNCH_START = time(12, 0)
+LUNCH_END = time(13, 0)
 
 
 # ---------------------------------------------------------------------------
@@ -197,11 +203,45 @@ class ScheduleSlotForm(FlaskForm):
     )
     start_time = TimeField("Start", validators=[DataRequired()])
     end_time = TimeField("End", validators=[DataRequired()])
+    session_length = SelectField(
+        "Session length",
+        choices=[(50, "50 minutes"), (60, "60 minutes")],
+        coerce=int,
+        validators=[DataRequired()],
+    )
+
     submit = SubmitField("Save availability")
 
+
+    def validate_start_time(self, field):
+        if field.data < BUSINESS_START:
+            raise ValidationError("Availability can't start before 8:00 AM.")
+
     def validate_end_time(self, field):
-        if self.start_time.data and field.data <= self.start_time.data:
+        if not self.start_time.data:
+            return
+        if field.data <= self.start_time.data:
             raise ValidationError("End time must be after start time.")
+        if field.data > BUSINESS_END:
+            raise ValidationError("Availability can't end after 6:00 PM.")
+        if self.start_time.data < LUNCH_END and field.data > LUNCH_START:
+            raise ValidationError(
+                "Availability can't overlap the 12:00–1:00 PM lunch break. "
+                "Try splitting it into two slots, e.g. 8:00–12:00 and 1:00–6:00."
+            )
+
+    def validate_session_length(self, field):
+        if not self.start_time.data or not self.end_time.data:
+            return
+        block_minutes = (
+            self.end_time.data.hour * 60 + self.end_time.data.minute
+        ) - (
+            self.start_time.data.hour * 60 + self.start_time.data.minute
+        )
+        if block_minutes < field.data:
+            raise ValidationError(
+                f"This time block is too short to fit a {field.data}-minute session."
+            )
 
 
 # ---------------------------------------------------------------------------
