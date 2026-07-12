@@ -2544,11 +2544,16 @@ body {
    DARK MODE
    ========================================================================== */
 
-   #darkModeCheckbox {
+/* ==========================================================================
+   DARK MODE
+   ========================================================================== */
+
+#darkModeCheckbox {
     display: none !important;
     position: absolute;
     opacity: 0;
 }
+
 .dark-mode-group {
     margin: 16px 0;
 }
@@ -2561,7 +2566,6 @@ body {
     margin-bottom: 8px;
 }
 
-/* Replace the existing theme-toggle CSS with this */
 .theme-toggle {
     display: flex;
     align-items: center;
@@ -2705,6 +2709,592 @@ body.dark-mode textarea {
     color: #e0e0e0;
     border-color: #0f3460;
 }
+
+/* ==========================================================================
+   DARK MODE — Additional fixes for text contrast
+   ========================================================================== */
+
+body.dark-mode {
+    background: #1a1a2e;
+    color: #e0e0e0;
+}
+
+/* Fix top nav */
+body.dark-mode .top-nav {
+    background: #0f172a;
+}
+
+body.dark-mode .nav-brand {
+    color: #e0e0e0;
+}
+
+body.dark-mode .user-badge {
+    background: rgba(255,255,255,0.1);
+    color: #e0e0e0;
+}
+
+body.dark-mode .nav-logout {
+    color: #94a3b8;
+}
+
+body.dark-mode .nav-logout:hover {
+    color: #e0e0e0;
+}
+
+/* Fix sidebar */
+body.dark-mode .sidebar {
+    background: #16213e;
+    border-color: #0f3460;
+}
+
+body.dark-mode .nav-item {
+    color: #94a3b8;
+}
+
+body.dark-mode .nav-item:hover {
+    background: rgba(74, 155, 127, 0.15);
+    color: #4a9b7f;
+}
+
+body.dark-mode .nav-item.active {
+    background: rgba(74, 155, 127, 0.2);
+    color: #4a9b7f;
+}
+
+body.dark-mode .crisis-link {
+    color: #ef4444;
+}
+
+body.dark-mode .crisis-link:hover {
+    background: rgba(239, 68, 68, 0.15);
+    color: #ef4444;
+}
+
+/* Fix main content area */
+body.dark-mode .main-content {
+    background: #1a1a2e;
+}
+
+body.dark-mode .content-header h1 {
+    color: #e0e0e0;
+}
+
+body.dark-mode .subtitle {
+    color: #94a3b8;
+}
+
+/* Fix action cards */
+body.dark-mode .action-card {
+    background: #16213e;
+    border-color: #0f3460;
+}
+
+body.dark-mode .secondary-card h3 {
+    color: #e0e0e0;
+}
+
+body.dark-mode .secondary-card p {
+    color: #94a3b8;
+}
+
+body.dark-mode .card-btn {
+    background: #0f3460;
+    color: #e0e0e0;
+}
+
+body.dark-mode .card-btn:hover {
+    background: #1a4a7a;
+}
+
+body.dark-mode .primary-card .card-btn {
+    background: #e0e0e0;
+    color: #1a1a2e;
+}
+
+/* Fix stat cards */
+body.dark-mode .stat-card {
+    background: #16213e;
+    border-color: #0f3460;
+}
+
+body.dark-mode .stat-label {
+    color: #94a3b8;
+}
+
+body.dark-mode .stat-value {
+    color: #e0e0e0;
+}
+
+/* Fix section titles */
+body.dark-mode .section-title {
+    color: #94a3b8;
+}
+
+/* Fix appointment list */
+body.dark-mode .appointment-card {
+    background: #16213e;
+    border-color: #0f3460;
+}
+
+body.dark-mode .appt-info h4 {
+    color: #e0e0e0;
+}
+
+body.dark-mode .appt-info p {
+    color: #94a3b8;
+}
+
+body.dark-mode .empty-state {
+    color: #94a3b8;
+}
+
+/* Fix widgets / sidebar cards */
+body.dark-mode .widget-card {
+    background: #16213e;
+    border-color: #0f3460;
+}
+
+body.dark-mode .widget-card h4 {
+    color: #94a3b8;
+}
+
+body.dark-mode .tip-text {
+    color: #cbd5e1;
+}
+
+body.dark-mode .mood-hint {
+    color: #94a3b8;
+}
+
+body.dark-mode .countdown p {
+    color: #94a3b8;
+}
+
+body.dark-mode .peer-status {
+    color: #e0e0e0;
+}
+
+body.dark-mode .widget-link {
+    color: #4a9b7f;
+}
+
+/* Fix settings cards */
+body.dark-mode .settings-card {
+    background: #16213e;
+    border-color: #0f3460;
+}
+
+body.dark-mode .settings-card h3 {
+    color: #e0e0e0;
+}
+
+body.dark-mode .form-group label {
+    color: #94a3b8;
+}
+
+body.dark-mode .form-group input,
+body.dark-mode .form-group select,
+body.dark-mode .form-group textarea {
+    background: #0f172a;
+    border-color: #0f3460;
+    color: #e0e0e0;
+}
+
+body.dark-mode .form-group input::placeholder {
+    color: #64748b;
+}
+
+body.dark-mode .account-preview {
+    background: #0f172a;
+}
+
+body.dark-mode .account-details h4 {
+    color: #e0e0e0;
+}
+
+body.dark-mode .account-details p {
+    color: #94a3b8;
+}
+
+body.dark-mode .checkbox-group {
+    background: #0f172a;
+}
+
+body.dark-mode .checkbox-group:hover {
+    background: rgba(74, 155, 127, 0.15);
+}
+
+body.dark-mode .checkbox-group label {
+    color: #e0e0e0;
+}
+
+body.dark-mode .checkbox-group .hint {
+    color: #94a3b8;
+}
+
+body.dark-mode .toggle-label {
+    color: #e0e0e0;
+}
+
+/* Fix danger zone */
+body.dark-mode .danger-zone {
+    background: linear-gradient(135deg, #2d1b1b 0%, #16213e 100%);
+    border-color: #7f1d1d;
+}
+
+body.dark-mode .danger-text {
+    color: #fca5a5;
+}
+
+/* Fix flash messages */
+body.dark-mode .flash.danger {
+    background: #7f1d1d;
+    color: #fca5a5;
+    border-color: #991b1b;
+}
+
+body.dark-mode .flash.success {
+    background: #064e3b;
+    color: #6ee7b7;
+    border-color: #065f46;
+}
+
+body.dark-mode .flash.info {
+    background: #1e3a5f;
+    color: #93c5fd;
+    border-color: #1e40af;
+}
+
+/* Fix chat list */
+body.dark-mode .chat-list {
+    background: #16213e;
+    border-color: #0f3460;
+}
+
+body.dark-mode .chat-list-item {
+    border-color: #0f3460;
+}
+
+body.dark-mode .chat-list-item:hover {
+    background: rgba(74, 155, 127, 0.1);
+}
+
+body.dark-mode .chat-header h4 {
+    color: #e0e0e0;
+}
+
+body.dark-mode .chat-preview {
+    color: #94a3b8;
+}
+
+body.dark-mode .chat-time {
+    color: #64748b;
+}
+
+/* Fix booking form */
+body.dark-mode .booking-form-card {
+    background: #16213e;
+    border-color: #0f3460;
+}
+
+/* Fix sessions page */
+body.dark-mode .sessions-table {
+    background: #16213e;
+    border-color: #0f3460;
+}
+
+body.dark-mode .session-row {
+    border-color: #0f3460;
+}
+
+body.dark-mode .session-row:hover {
+    background: #0f172a;
+}
+
+body.dark-mode .session-info h4 {
+    color: #e0e0e0;
+}
+
+body.dark-mode .session-info p {
+    color: #94a3b8;
+}
+
+body.dark-mode .session-time {
+    color: #94a3b8;
+}
+
+body.dark-mode .empty-sessions {
+    color: #94a3b8;
+}
+
+body.dark-mode .empty-sessions h3 {
+    color: #e0e0e0;
+}
+
+/* Fix chat thread page (non-full-height version) */
+body.dark-mode .chat-page {
+    background: #1a1a2e;
+}
+
+body.dark-mode .chat-topbar {
+    background: #0f172a;
+}
+
+body.dark-mode .chat-partner-info h3 {
+    color: #e0e0e0;
+}
+
+body.dark-mode .chat-partner-info p {
+    color: #94a3b8;
+}
+
+body.dark-mode .chat-input-area {
+    background: #16213e;
+    border-color: #0f3460;
+}
+
+body.dark-mode .chat-input-wrapper {
+    background: #0f172a;
+    border-color: #0f3460;
+}
+
+body.dark-mode .chat-input-wrapper textarea {
+    color: #e0e0e0;
+}
+
+body.dark-mode .chat-input-wrapper textarea::placeholder {
+    color: #64748b;
+}
+
+body.dark-mode .encryption-notice {
+    color: #64748b;
+}
+
+/* Fix full-height chat container */
+body.dark-mode .chat-container {
+    background: #16213e;
+    border-color: #0f3460;
+}
+
+body.dark-mode .chat-header {
+    background: #0f172a;
+    border-color: #0f3460;
+}
+
+body.dark-mode .chat-header h3 {
+    color: #e0e0e0;
+}
+
+body.dark-mode .messages-area {
+    background: #1a1a2e;
+}
+
+body.dark-mode .message-bubble.received {
+    background: #16213e;
+    color: #e0e0e0;
+    border-color: #0f3460;
+}
+
+body.dark-mode .message-date-divider span {
+    background: #1a1a2e;
+    color: #64748b;
+}
+
+body.dark-mode .input-area {
+    background: #16213e;
+    border-color: #0f3460;
+}
+
+body.dark-mode .input-area textarea {
+    background: #0f172a;
+    color: #e0e0e0;
+    border-color: #0f3460;
+}
+
+body.dark-mode .input-area button {
+    background: #2d8a6e;
+}
+
+body.dark-mode .input-area button:hover {
+    background: #3d8a6e;
+}
+
+/* Fix session banners */
+body.dark-mode .session-active {
+    background: rgba(16, 185, 129, 0.15);
+    color: #6ee7b7;
+}
+
+body.dark-mode .session-upcoming {
+    background: rgba(245, 158, 11, 0.15);
+    color: #fcd34d;
+}
+
+body.dark-mode .session-ended {
+    background: rgba(239, 68, 68, 0.15);
+    color: #fca5a5;
+}
+
+body.dark-mode .chat-card {
+    background: #16213e;
+    border-color: #0f3460;
+}
+
+body.dark-mode .chat-card.past {
+    opacity: 0.5;
+}
+
+body.dark-mode .session-expired-notice {
+    background: #0f172a;
+    border-color: #0f3460;
+}
+
+body.dark-mode .session-expired-title {
+    color: #6ee7b7;
+}
+
+body.dark-mode .session-expired-text {
+    color: #94a3b8;
+}
+
+body.dark-mode .time-note {
+    background: #0f172a;
+    border-color: #0f3460;
+    color: #94a3b8;
+}
+
+/* Fix form errors */
+body.dark-mode .form-errors {
+    background: #7f1d1d;
+    border-color: #991b1b;
+}
+
+body.dark-mode .error-message {
+    color: #fca5a5;
+}
+
+/* Fix password requirements */
+body.dark-mode .password-requirements {
+    background: #0f172a;
+    border-color: #0f3460;
+}
+
+body.dark-mode .password-requirements p {
+    color: #e0e0e0;
+}
+
+body.dark-mode .password-requirements li {
+    color: #94a3b8;
+}
+
+/* Fix reset page */
+body.dark-mode .reset-header {
+    background: #0f172a;
+}
+
+body.dark-mode .reset-card {
+    background: #16213e;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+}
+
+body.dark-mode .reset-card h2 {
+    color: #e0e0e0;
+}
+
+body.dark-mode .reset-card .subtitle {
+    color: #94a3b8;
+}
+
+body.dark-mode .reset-page .security-note {
+    background: #0f172a;
+    color: #94a3b8;
+}
+
+/* Fix error pages */
+body.dark-mode .error-page {
+    background: #1a1a2e;
+}
+
+body.dark-mode .error-title {
+    color: #e0e0e0;
+}
+
+body.dark-mode .error-message {
+    color: #94a3b8;
+}
+
+body.dark-mode .btn-outline-error {
+    background: #16213e;
+    border-color: #0f3460;
+    color: #e0e0e0;
+}
+
+/* Fix auth pages */
+body.dark-mode .auth-header {
+    background: #0f172a;
+}
+
+body.dark-mode .toggle-container {
+    background: #16213e;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+}
+
+body.dark-mode .toggle-btn {
+    color: #94a3b8;
+}
+
+body.dark-mode .toggle-btn:hover:not(.active) {
+    color: #e0e0e0;
+}
+
+body.dark-mode .account-type-btn {
+    background: #16213e;
+    border-color: #0f3460;
+    color: #e0e0e0;
+}
+
+body.dark-mode .account-type-btn.active {
+    background: rgba(74, 155, 127, 0.2);
+    border-color: #4a9b7f;
+    color: #4a9b7f;
+}
+
+body.dark-mode .info-box {
+    background: #0f172a;
+}
+
+body.dark-mode .info-box p {
+    color: #94a3b8;
+}
+
+body.dark-mode .divider {
+    color: #64748b;
+}
+
+body.dark-mode .divider::before,
+body.dark-mode .divider::after {
+    background: #0f3460;
+}
+
+body.dark-mode .forgot-password {
+    color: #94a3b8;
+}
+
+/* Fix typing indicator */
+body.dark-mode .typing-indicator {
+    background: #16213e;
+    border-color: #0f3460;
+}
+
+/* Fix empty chat state */
+body.dark-mode .empty-chat {
+    color: #94a3b8;
+}
+
+body.dark-mode .empty-chat h3 {
+    color: #e0e0e0;
+}
+
 /* ==========================================================================
    RESPONSIVE
    ========================================================================== */

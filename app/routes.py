@@ -79,7 +79,7 @@ def unauthorized():
         return jsonify({"error": "Authentication required"}), 401
     
     # For regular requests, show a nice page instead of flashing a message
-    return render_template("auth/unauthorized.html"), 401
+    return render_template("unauthorized.html"), 401
 
 @auth_bp.route("/", methods=["GET", "POST"])
 @limiter.limit("10 per minute")
@@ -341,7 +341,30 @@ def appointments():
         if not therapist:
             abort(400)
 
-        from datetime import datetime
+        weekday_map = {0: "mon", 1: "tue", 2: "wed", 3: "thu", 4: "fri", 5: "sat", 6: "sun"}
+        day_key = weekday_map[form.date.data.weekday()]
+
+        matching_slot = AvailabilitySlot.query.filter_by(
+            therapist_id=therapist.user_id, day_of_week=day_key, is_blocked=False
+        ).filter(
+            AvailabilitySlot.start_time <= form.start_time.data,
+            AvailabilitySlot.end_time > form.start_time.data,
+        ).first()
+
+        if not matching_slot:
+            flash("That time isn't within the therapist's available hours.", "danger")
+            return redirect(url_for("user.appointments"))
+
+        from datetime import timedelta
+        duration = matching_slot.session_length_minutes
+        proposed_end = (
+            datetime.combine(form.date.data, form.start_time.data) + timedelta(minutes=duration)
+        ).time()
+
+        if proposed_end > matching_slot.end_time:
+            flash("There isn't enough time left in that slot for a full session.", "danger")
+            return redirect(url_for("user.appointments"))
+
         appt = Appointment(
             user_id=current_user.id,
             therapist_id=therapist.user_id,
@@ -349,7 +372,7 @@ def appointments():
             session_type=form.session_type.data,
             notes=form.notes.data,
             status="pending",
-            duration_minutes=50,
+            duration_minutes=duration,
         )
         db.session.add(appt)
         db.session.commit()
@@ -455,6 +478,7 @@ def schedule():
             day_of_week=form.day_of_week.data,
             start_time=form.start_time.data,
             end_time=form.end_time.data,
+            session_length_minutes=form.session_length.data,
         ))
         db.session.commit()
         flash("Availability saved.", "success")
@@ -588,7 +612,7 @@ def _shared_settings(template, extra_forms=None):
             current_user.display_name = account_form.display_name.data
             current_user.email = account_form.email.data.lower().strip()
             # Checkbox sends 'on' when checked, nothing when unchecked
-            current_user.dark_mode = 'dark_mode' in request.form
+            current_user.dark_mode = account_form.dark_mode.data
             db.session.commit()
             flash("Account updated.", "success")
             return redirect(request.path)

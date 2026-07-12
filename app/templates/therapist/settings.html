@@ -38,8 +38,7 @@
         <div class="form-group dark-mode-group">
     <label>Appearance</label>
     <label class="theme-toggle" id="darkModeToggle">
-        <input type="checkbox" name="dark_mode" id="darkModeCheckbox" {% if current_user.dark_mode %}checked{% endif %}
-               style="position:absolute;opacity:0;width:0;height:0;">
+        {{ account_form.dark_mode(id="darkModeCheckbox", style="position:absolute;opacity:0;width:0;height:0;") }}
         <span class="toggle-slider">
             <span class="icon sun">☀️</span>
             <span class="icon moon">🌙</span>
@@ -113,31 +112,23 @@ const darkModeLabel = document.getElementById('darkModeLabel');
 const toggleSlider = darkModeToggle.querySelector('.toggle-slider');
 const body = document.body;
 
-// Apply on page load
-if (darkModeCheckbox.checked) {
-    body.classList.add('dark-mode');
-    toggleSlider.classList.add('active');
-    darkModeLabel.textContent = 'Dark Mode';
+function updateDarkModeUI() {
+    const isDark = darkModeCheckbox.checked;
+    toggleSlider.classList.toggle('active', isDark);
+    darkModeLabel.textContent = isDark ? 'Dark Mode' : 'Light Mode';
+    body.classList.toggle('dark-mode', isDark);
 }
 
+// Apply on page load
+updateDarkModeUI();
+
+// Listen for changes (native checkbox behavior)
+darkModeCheckbox.addEventListener('change', updateDarkModeUI);
+
+// Click on the label area toggles the checkbox naturally
 darkModeToggle.addEventListener('click', function(e) {
-    // Don't toggle if clicking the actual checkbox
-    if (e.target === darkModeCheckbox) return;
-    
-    // Toggle checkbox
-    darkModeCheckbox.checked = !darkModeCheckbox.checked;
-    
-    // Toggle slider class
-    toggleSlider.classList.toggle('active', darkModeCheckbox.checked);
-    
-    // Apply/remove dark mode
-    if (darkModeCheckbox.checked) {
-        body.classList.add('dark-mode');
-        darkModeLabel.textContent = 'Dark Mode';
-    } else {
-        body.classList.remove('dark-mode');
-        darkModeLabel.textContent = 'Light Mode';
-    }
+    // Let the checkbox handle itself; just update UI after
+    setTimeout(updateDarkModeUI, 0);
 });
 </script>
 {% endblock %}
